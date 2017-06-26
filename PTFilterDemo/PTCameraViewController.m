@@ -23,8 +23,9 @@
 }
 @property (nonatomic, strong) NSMutableArray *filterSettings;
 @property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) GPUImageView *cameraFilterOutput;
+@property (nonatomic, strong) GPUImageView *cameraFilterPreview;
 @property (nonatomic, strong) GPUImageOutput<GPUImageInput> *cameraFilterInput;
+@property (nonatomic, strong) GPUImageOutput<GPUImageInput> *cameraFilterOutput;
 @property (strong, nonatomic) GPUImageVideoCamera *camera;
 @property (nonatomic, strong) UIButton *filterMenuButton;
 @property (nonatomic, strong) UIButton *dismissButton;
@@ -38,7 +39,7 @@ static NSString *PTFilterTableViewCellID = @"PTFilterTableViewCellID";
 - (void)viewDidLoad {
     [super viewDidLoad];
     filterMenuOn = NO;
-    [self.view addSubview:self.cameraFilterOutput];
+    [self.view addSubview:self.cameraFilterPreview];
     [self.camera addTarget:self.cameraFilterInput];
     
     [self.view addSubview:self.dismissButton];
@@ -104,6 +105,11 @@ static NSString *PTFilterTableViewCellID = @"PTFilterTableViewCellID";
     [self.camera rotateCamera];
 }
 
+-(void)cameraStillImageCapture{
+    [self.cameraFilterOutput useNextFrameForImageCapture];
+    UIImage *image = [self.cameraFilterOutput imageFromCurrentFramebuffer];
+}
+
 -(void)toggleFilterMenu{
     [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1
           initialSpringVelocity:0.6 options:UIViewAnimationOptionAllowUserInteraction  animations:^(){
@@ -121,7 +127,9 @@ static NSString *PTFilterTableViewCellID = @"PTFilterTableViewCellID";
 }
 
 -(void)updateFilterChain{
-    [[PTFilterManager chainInput:self.cameraFilterInput settings:self.filterSettings beautify:YES] addTarget:self.cameraFilterOutput];
+    self.cameraFilterOutput = [PTFilterManager chainInput:self.cameraFilterInput settings:self.filterSettings beautify:YES];
+    [self.cameraFilterOutput addTarget:self.cameraFilterPreview];
+    
 }
 
 -(void)resetFilter{
@@ -219,13 +227,13 @@ static NSString *PTFilterTableViewCellID = @"PTFilterTableViewCellID";
     return _cameraFilterInput;
 }
 
--(GPUImageView *)cameraFilterOutput{
-    if (!_cameraFilterOutput) {
-        _cameraFilterOutput = [[GPUImageView alloc] initWithFrame:self.view.bounds];
-        _cameraFilterOutput.center = self.view.center;
-        _cameraFilterOutput.backgroundColor = [UIColor clearColor];
+-(GPUImageView *)cameraFilterPreview{
+    if (!_cameraFilterPreview) {
+        _cameraFilterPreview = [[GPUImageView alloc] initWithFrame:self.view.bounds];
+        _cameraFilterPreview.center = self.view.center;
+        _cameraFilterPreview.backgroundColor = [UIColor clearColor];
     }
-    return _cameraFilterOutput;
+    return _cameraFilterPreview;
 }
 
 -(GPUImageVideoCamera *)camera{
